@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://test-agents/task.schema.json",
+  "title": "TestWorkflowTask",
+  "type": "object",
+  "required": ["id", "target_site", "providers", "skills"],
+  "properties": {
+    "id": { "type": "string", "description": "UUID" },
+    "target_site": { "type": "string", "format": "uri" },
+    "providers": {
+      "type": "object",
+      "required": ["model"],
+      "properties": {
+        "model": { "type": "string", "examples": ["claude-opus-4-8"] },
+        "auth": { "type": "string", "description": "vault:// reference" }
+      }
+    },
+    "maps": {
+      "type": "object",
+      "properties": {
+        "routes": { "type": "array", "items": { "type": "string" } },
+        "selectors": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    },
+    "skills": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["test-gen", "verify", "code-review"] }
+    },
+    "sys_prompt_ref": { "type": "string", "description": "path in skills/ store" }
+  }
+}
