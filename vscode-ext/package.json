@@ -1,0 +1,56 @@
+{
+  "name": "test-agents-control-plane",
+  "displayName": "Test Agents Control Plane",
+  "description": "Task tree view, review notifications and webview for the Test Agents pipeline",
+  "version": "0.1.0",
+  "publisher": "tuankiettran",
+  "engines": { "vscode": "^1.90.0" },
+  "categories": ["Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "id": "testAgents",
+          "name": "Test Agents",
+          "icon": "$(beaker)"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "testAgents.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "Test Agents"
+      },
+      {
+        "command": "testAgents.openReview",
+        "title": "Open Review",
+        "icon": "$(open-preview)",
+        "category": "Test Agents"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "testAgents.refresh",
+          "when": "view == testAgents",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.4.0"
+  }
+}
