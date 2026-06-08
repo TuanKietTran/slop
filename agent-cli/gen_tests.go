@@ -67,14 +67,14 @@ func runGenTests(cmd *cobra.Command, _ []string) error {
 	client := anthropic.NewClient()
 
 	msg, err := client.Messages.New(context.Background(), anthropic.MessageNewParams{
-		Model:     anthropic.ModelClaude_Sonnet_4_5,
-		MaxTokens: 4096,
-		System: []anthropic.TextBlockParam{
-			{Text: systemPrompt},
-		},
-		Messages: []anthropic.MessageParam{
+		Model:     anthropic.F(anthropic.ModelClaude3_5SonnetLatest),
+		MaxTokens: anthropic.F(int64(4096)),
+		System: anthropic.F([]anthropic.TextBlockParam{
+			anthropic.NewTextBlock(systemPrompt),
+		}),
+		Messages: anthropic.F([]anthropic.MessageParam{
 			anthropic.NewUserMessage(anthropic.NewTextBlock(string(snapData))),
-		},
+		}),
 	})
 	if err != nil {
 		return fmt.Errorf("anthropic API call: %w", err)
@@ -82,7 +82,7 @@ func runGenTests(cmd *cobra.Command, _ []string) error {
 
 	var responseText string
 	for _, block := range msg.Content {
-		if block.Type == "text" {
+		if block.Type == anthropic.ContentBlockTypeText {
 			responseText += block.Text
 		}
 	}
