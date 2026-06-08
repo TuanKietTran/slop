@@ -1,0 +1,22 @@
+{
+  "name": "test-agents-ui",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@nuxtjs/tailwindcss": "^6.12.0",
+    "@vue-flow/core": "^1.42.0",
+    "nuxt": "^3.12.0",
+    "vue": "^3.4.0"
+  },
+  "devDependencies": {
+    "@nuxt/devtools": "latest",
+    "typescript": "^5.4.0"
+  }
+}
