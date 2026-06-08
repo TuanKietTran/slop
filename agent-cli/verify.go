@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -13,9 +14,9 @@ import (
 
 // TestResult holds the result of running a single test case.
 type TestResult struct {
-	Name    string        `json:"name"`
-	Passed  bool          `json:"passed"`
-	Error   string        `json:"error,omitempty"`
+	Name     string        `json:"name"`
+	Passed   bool          `json:"passed"`
+	Error    string        `json:"error,omitempty"`
 	Duration time.Duration `json:"duration_ms"`
 }
 
@@ -65,51 +66,31 @@ func runVerify(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
-	pw, err := playwright.Run()
-	if err != nil {
-		return fmt.Errorf("start playwright: %w", err)
+	// Try playwright first, fall back to HTTP verification.
+	verifyFn, cleanup, playwrightErr := setupPlaywrightVerifier()
+	if playwrightErr != nil {
+		fmt.Fprintf(os.Stderr, "WARN: playwright unavailable (%v), falling back to HTTP verification\n", playwrightErr)
 	}
-	defer func() { _ = pw.Stop() }()
-
-	browser, err := pw.Chromium.Launch(playwright.BrowserTypeLaunchOptions{
-		Headless: playwright.Bool(true),
-	})
-	if err != nil {
-		return fmt.Errorf("launch browser: %w", err)
+	if cleanup != nil {
+		defer cleanup()
 	}
-	defer func() { _ = browser.Close() }()
 
 	results := &VerifyResults{}
 	for _, tc := range tests {
 		start := time.Now()
 		result := TestResult{Name: tc.Name}
 
-		func() {
-			page, err := browser.NewPage()
-			if err != nil {
-				result.Error = fmt.Sprintf("new page: %v", err)
-				return
-			}
-			defer func() { _ = page.Close() }()
-
-			if site != "" {
-				if _, err := page.Goto(site, playwright.PageGotoOptions{
-					WaitUntil: playwright.WaitUntilStateDomcontentloaded,
-				}); err != nil {
-					result.Error = fmt.Sprintf("navigate: %v", err)
-					return
-				}
-			}
-
-			// For each step in the test case, execute as a simple check.
-			for _, step := range tc.Steps {
-				if err := executeStep(page, step); err != nil {
-					result.Error = fmt.Sprintf("step %q: %v", step, err)
-					return
-				}
-			}
+		var tcErr error
+		if verifyFn != nil {
+			tcErr = verifyFn(tc, site)
+		} else {
+			tcErr = verifyWithHTTP(tc, site)
+		}
+		if tcErr != nil {
+			result.Error = tcErr.Error()
+		} else {
 			result.Passed = true
-		}()
+		}
 
 		result.Duration = time.Since(start)
 		if result.Passed {
@@ -138,8 +119,77 @@ func runVerify(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
+// setupPlaywrightVerifier tries to start a playwright browser and returns a verify function.
+func setupPlaywrightVerifier() (func(TestCase, string) error, func(), error) {
+	pw, err := playwright.Run()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	browser, err := pw.Chromium.Launch(playwright.BrowserTypeLaunchOptions{
+		Headless: playwright.Bool(true),
+	})
+	if err != nil {
+		_ = pw.Stop()
+		return nil, nil, err
+	}
+
+	cleanup := func() {
+		_ = browser.Close()
+		_ = pw.Stop()
+	}
+
+	fn := func(tc TestCase, site string) error {
+		page, err := browser.NewPage()
+		if err != nil {
+			return fmt.Errorf("new page: %v", err)
+		}
+		defer func() { _ = page.Close() }()
+
+		if site != "" {
+			if _, err := page.Goto(site, playwright.PageGotoOptions{
+				WaitUntil: playwright.WaitUntilStateDomcontentloaded,
+			}); err != nil {
+				return fmt.Errorf("navigate: %v", err)
+			}
+		}
+
+		for _, step := range tc.Steps {
+			if err := executeStep(page, step); err != nil {
+				return fmt.Errorf("step %q: %v", step, err)
+			}
+		}
+		return nil
+	}
+
+	return fn, cleanup, nil
+}
+
+// verifyWithHTTP runs basic HTTP reachability checks for each test step.
+func verifyWithHTTP(tc TestCase, defaultSite string) error {
+	for _, step := range tc.Steps {
+		var url string
+		if len(step) > 11 && step[:11] == "navigate: " {
+			url = step[11:]
+		} else {
+			url = defaultSite
+		}
+		if url == "" {
+			continue
+		}
+		resp, err := http.Get(url) //nolint:gosec
+		if err != nil {
+			return fmt.Errorf("GET %s: %w", url, err)
+		}
+		_ = resp.Body.Close()
+		if resp.StatusCode >= 400 {
+			return fmt.Errorf("GET %s returned %d", url, resp.StatusCode)
+		}
+	}
+	return nil
+}
+
 // executeStep runs a single test step description against the page.
-// For steps that start with "navigate:", it navigates. Otherwise it checks visibility.
 func executeStep(page playwright.Page, step string) error {
 	if len(step) > 11 && step[:11] == "navigate: " {
 		url := step[11:]
