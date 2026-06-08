@@ -1,0 +1,3 @@
+-P ubuntu-latest=harbor.local/agent-runner:latest
+--env ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY
+--env NATS_URL=nats://localhost:4222

@@ -1,0 +1,25 @@
+{
+  "name": "test-agent-runner",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/go:1": { "version": "1.22" },
+    "ghcr.io/devcontainers/features/node:1": { "version": "20" },
+    "ghcr.io/devcontainers/features/python:1": { "version": "3.12" }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "remoteEnv": {
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
+    "NATS_URL": "${localEnv:NATS_URL}",
+    "TEMPORAL_HOST": "${localEnv:TEMPORAL_HOST}"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "ms-python.python",
+        "Vue.volar",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  }
+}

@@ -1,0 +1,50 @@
+name: agent-pipeline
+on:
+  workflow_dispatch:
+    inputs:
+      site:
+        description: "Target site URL"
+        required: true
+        default: "https://example.com"
+
+# act annotations:
+#   act workflow_dispatch -j agent-run --input site=https://example.com
+
+jobs:
+  agent-run:
+    runs-on: ubuntu-latest
+    # Local act: use devcontainer image
+    # runs-on: [self-hosted, act]
+    container:
+      image: harbor.local/agent-runner:latest
+      env:
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        NATS_URL: ${{ vars.NATS_URL || 'nats://localhost:4222' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build agent CLI
+        run: go build -o /usr/local/bin/agent ./agent-cli
+
+      - name: Investigate site
+        run: agent investigate --site "${{ inputs.site }}" --out out/
+
+      - name: Generate tests
+        run: agent gen-tests --skills test-gen --skills-dir skills/ --out out/
+
+      - name: Verify tests
+        run: agent verify --site "${{ inputs.site }}" --out out/
+
+      - name: Self review
+        run: agent review-self --skills-dir skills/ --out out/
+
+      - name: Submit to review queue
+        run: agent submit --to review-queue --out out/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: agent-artifacts-${{ github.run_id }}
+          path: out/
+          retention-days: 7
