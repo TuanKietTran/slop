@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShopDemo - Products</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #222; }
+    header { background: #1a73e8; color: white; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+    header h1 { font-size: 1.5rem; }
+    header nav a { color: white; text-decoration: none; margin-left: 20px; }
+    header nav a:hover { text-decoration: underline; }
+    .cart-badge { background: #ff4500; color: white; border-radius: 50%; padding: 2px 7px; font-size: 0.8rem; margin-left: 4px; }
+    .search-bar { padding: 16px 32px; background: white; border-bottom: 1px solid #ddd; }
+    .search-bar input { width: 100%; max-width: 480px; padding: 10px 16px; border: 1px solid #ccc; border-radius: 24px; font-size: 1rem; outline: none; }
+    .search-bar input:focus { border-color: #1a73e8; }
+    main { max-width: 1100px; margin: 32px auto; padding: 0 16px; }
+    h2 { margin-bottom: 24px; font-size: 1.4rem; }
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; }
+    .product-card { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.08); overflow: hidden; transition: transform .15s; }
+    .product-card:hover { transform: translateY(-3px); }
+    .product-card img { width: 100%; height: 180px; object-fit: cover; background: #e8f0fe; }
+    .product-card-body { padding: 16px; }
+    .product-card-body h3 { margin-bottom: 8px; font-size: 1rem; }
+    .product-card-body .price { color: #1a73e8; font-weight: 700; font-size: 1.1rem; margin-bottom: 12px; }
+    .product-card-body a { display: block; text-align: center; color: #1a73e8; text-decoration: none; margin-bottom: 8px; font-size: 0.9rem; }
+    .btn { width: 100%; padding: 10px; background: #1a73e8; color: white; border: none; border-radius: 6px; font-size: 0.95rem; cursor: pointer; }
+    .btn:hover { background: #1558b0; }
+    .no-results { display: none; padding: 40px; text-align: center; color: #666; }
+    footer { text-align: center; padding: 32px; color: #888; font-size: 0.9rem; margin-top: 40px; border-top: 1px solid #ddd; background: white; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ShopDemo</h1>
+    <nav>
+      <a href="index.html">Products</a>
+      <a href="cart.html">Cart <span class="cart-badge" id="cart-count">0</span></a>
+    </nav>
+  </header>
+
+  <div class="search-bar">
+    <input type="text" id="search" placeholder="Search products..." aria-label="Search products" />
+  </div>
+
+  <main>
+    <h2>Featured Products</h2>
+    <div class="product-grid" id="product-grid">
+
+      <div class="product-card" data-name="Wireless Headphones">
+        <div style="height:180px;background:#c7d9f9;display:flex;align-items:center;justify-content:center;font-size:3rem;">🎧</div>
+        <div class="product-card-body">
+          <h3>Wireless Headphones</h3>
+          <div class="price">$79.99</div>
+          <a href="product.html?id=1">View Details</a>
+          <button class="btn add-to-cart" data-id="1" data-name="Wireless Headphones" data-price="79.99">Add to Cart</button>
+        </div>
+      </div>
+
+      <div class="product-card" data-name="Mechanical Keyboard">
+        <div style="height:180px;background:#c7f9d2;display:flex;align-items:center;justify-content:center;font-size:3rem;">⌨️</div>
+        <div class="product-card-body">
+          <h3>Mechanical Keyboard</h3>
+          <div class="price">$129.99</div>
+          <a href="product.html?id=2">View Details</a>
+          <button class="btn add-to-cart" data-id="2" data-name="Mechanical Keyboard" data-price="129.99">Add to Cart</button>
+        </div>
+      </div>
+
+      <div class="product-card" data-name="USB-C Hub">
+        <div style="height:180px;background:#f9e4c7;display:flex;align-items:center;justify-content:center;font-size:3rem;">🔌</div>
+        <div class="product-card-body">
+          <h3>USB-C Hub</h3>
+          <div class="price">$49.99</div>
+          <a href="product.html?id=3">View Details</a>
+          <button class="btn add-to-cart" data-id="3" data-name="USB-C Hub" data-price="49.99">Add to Cart</button>
+        </div>
+      </div>
+
+      <div class="product-card" data-name="Webcam HD">
+        <div style="height:180px;background:#f9c7e8;display:flex;align-items:center;justify-content:center;font-size:3rem;">📷</div>
+        <div class="product-card-body">
+          <h3>Webcam HD</h3>
+          <div class="price">$89.99</div>
+          <a href="product.html?id=4">View Details</a>
+          <button class="btn add-to-cart" data-id="4" data-name="Webcam HD" data-price="89.99">Add to Cart</button>
+        </div>
+      </div>
+
+    </div>
+    <div class="no-results" id="no-results">No products match your search.</div>
+  </main>
+
+  <footer>
+    &copy; 2026 ShopDemo Inc. All rights reserved.
+  </footer>
+
+  <script>
+    // Cart stored in sessionStorage.
+    function getCart() {
+      return JSON.parse(sessionStorage.getItem('cart') || '[]');
+    }
+    function saveCart(cart) {
+      sessionStorage.setItem('cart', JSON.stringify(cart));
+    }
+    function updateCartBadge() {
+      const n = getCart().reduce((s, i) => s + i.qty, 0);
+      document.getElementById('cart-count').textContent = n;
+    }
+
+    document.querySelectorAll('.add-to-cart').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cart = getCart();
+        const id = btn.dataset.id;
+        const existing = cart.find(i => i.id === id);
+        if (existing) {
+          existing.qty += 1;
+        } else {
+          cart.push({ id, name: btn.dataset.name, price: parseFloat(btn.dataset.price), qty: 1 });
+        }
+        saveCart(cart);
+        updateCartBadge();
+        btn.textContent = 'Added!';
+        setTimeout(() => btn.textContent = 'Add to Cart', 1000);
+      });
+    });
+
+    // Search / filter.
+    document.getElementById('search').addEventListener('input', e => {
+      const q = e.target.value.toLowerCase();
+      let visible = 0;
+      document.querySelectorAll('.product-card').forEach(card => {
+        const name = card.dataset.name.toLowerCase();
+        const show = name.includes(q);
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      document.getElementById('no-results').style.display = visible === 0 ? 'block' : 'none';
+    });
+
+    updateCartBadge();
+  </script>
+</body>
+</html>
